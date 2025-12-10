@@ -55,8 +55,8 @@ O **EMAI** é uma solução de IoT desenvolvida para monitorar a qualidade do ar
 ## 👥 Autores
 
 Projeto desenvolvido pela equipe:
-- **[Seu Nome]** - *Desenvolvimento de Firmware e Hardware*
-- **[Nome do Parceiro]** - *Desenvolvimento Frontend e Integração Cloud*
+- **Fernando Lucas Moraes da Luz** - *Desenvolvimento de Firmware e Hardware*
+- **Bruno Franzosi** - *Desenvolvimento Frontend e Integração Cloud*
 
 ## 📄 Licença
 

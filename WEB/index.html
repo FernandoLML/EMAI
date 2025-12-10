@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMAI - Monitoramento Inteligente</title>
+    <link rel="icon" type="image/jpeg" href="favicon.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-body: #121418;
+            --bg-card: #1e2329;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            
+            /* Cores Semânticas (Mais vibrantes para fundo escuro) */
+            --good: #00c853;
+            --warning: #ffd600;
+            --critical: #ff3d00;
+            --cold: #00b0ff;
+            --neutral: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- Header Melhorado --- */
+        header { 
+            width: 100%; 
+            max-width: 900px; 
+            margin-bottom: 25px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+        
+        .header-info h1 { font-size: 1.8rem; letter-spacing: -0.5px; }
+        .header-info .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;}
+        
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: #2d333b;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--neutral); }
+        .pulse { animation: pulse 1.5s infinite; }
+
+        /* --- Grid Responsivo Otimizado --- */
+        .dashboard {
+            display: grid;
+            gap: 15px;
+            width: 100%;
+            max-width: 900px;
+            grid-template-columns: repeat(2, 1fr); /* Mobile: 2 colunas */
+        }
+
+        /* --- Cards --- */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        /* Efeito de destaque nas bordas baseado no estado */
+        .card.status-good { border-color: rgba(0, 200, 83, 0.3); box-shadow: 0 0 15px rgba(0, 200, 83, 0.1); }
+        .card.status-warning { border-color: rgba(255, 214, 0, 0.3); box-shadow: 0 0 15px rgba(255, 214, 0, 0.1); }
+        .card.status-critical { border-color: rgba(255, 61, 0, 0.3); box-shadow: 0 0 15px rgba(255, 61, 0, 0.1); }
+
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .card-label { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 1px; }
+        .card-icon { font-size: 1.2rem; color: var(--text-secondary); transition: color 0.3s; }
+
+        .card-body { display: flex; align-items: baseline; gap: 5px; }
+        .value { font-size: 2.5rem; font-weight: 700; line-height: 1; }
+        .unit { font-size: 1rem; color: var(--text-secondary); font-weight: 500; }
+
+        /* Tendência e Diagnóstico */
+        .trend { font-size: 0.9rem; margin-left: auto; display: flex; align-items: center; gap: 5px; opacity: 0; transition: opacity 0.5s;}
+        .trend.up { color: var(--warning); } /* Subindo geralmente é alerta (exceto umidade baixa) */
+        .trend.down { color: var(--good); }
+
+        .diagnosis { margin-top: 10px; font-size: 0.8rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); width: fit-content;}
+
+        /* --- Cards Especiais --- */
+        /* IAQ ocupa linha inteira no topo em mobile se configurado na ordem, ou destaque */
+        .card.highlight { grid-column: span 2; background: linear-gradient(145deg, #1e2329, #252b33); }
+
+        /* Card de Recomendação (Novo!) */
+        .card.advice-box {
+            grid-column: span 2;
+            background-color: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            flex-direction: row;
+            align-items: center;
+            gap: 15px;
+        }
+        .advice-icon { font-size: 2rem; color: var(--cold); }
+        .advice-text h3 { font-size: 1rem; margin-bottom: 2px; }
+        .advice-text p { font-size: 0.9rem; color: var(--text-secondary); }
+
+        /* Classes de Cores de Texto */
+        .text-good { color: var(--good); }
+        .text-warning { color: var(--warning); }
+        .text-critical { color: var(--critical); }
+        .text-cold { color: var(--cold); }
+
+        /* Animações */
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* Responsividade Desktop */
+        @media (min-width: 768px) {
+            .dashboard { grid-template-columns: repeat(4, 1fr); }
+            .card.highlight { grid-column: span 2; grid-row: span 2; }
+            .card.advice-box { grid-column: span 4; }
+            .value { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-info">
+            <h1>EMAI <span style="font-weight: 300; opacity: 0.7;">Monitor</span></h1>
+            <div class="subtitle">Laboratório de IoT • Joinville</div>
+        </div>
+        <div class="status-badge">
+            <div id="conn-dot" class="status-dot"></div>
+            <span id="conn-text">Aguardando...</span>
+        </div>
+    </header>
+
+    <div class="dashboard">
+        
+        <div class="card advice-box">
+            <i class="advice-icon fa-solid fa-circle-info" id="advice-icon"></i>
+            <div class="advice-text">
+                <h3 id="advice-title">Analisando ambiente...</h3>
+                <p id="advice-desc">Aguarde enquanto coletamos os dados.</p>
+            </div>
+        </div>
+
+        <div class="card highlight" id="card-iaq">
+            <div class="card-header">
+                <span class="card-label">Qualidade do Ar</span>
+                <i class="card-icon fa-solid fa-wind"></i>
+            </div>
+            <div class="card-body">
+                <div class="value" id="iaq">--</div>
+                <div class="unit">IAQ</div>
+            </div>
+            <div class="diagnosis" id="diag-iaq">--</div>
+            <div class="trend" id="trend-iaq">--</div>
+        </div>
+
+        <div class="card" id="card-temp">
+            <div class="card-header">
+                <span class="card-label">Temperatura</span>
+                <i class="card-icon fa-solid fa-temperature-half"></i>
+            </div>
+            <div class="card-body">
+                <div class="value" id="temp">--</div>
+                <div class="unit">°C</div>
+            </div>
+            <div class="diagnosis" id="diag-temp">--</div>
+            <div class="trend" id="trend-temp"></div>
+        </div>
+
+        <div class="card" id="card-hum">
+            <div class="card-header">
+                <span class="card-label">Umidade</span>
+                <i class="card-icon fa-solid fa-droplet"></i>
+            </div>
+            <div class="card-body">
+                <div class="value" id="hum">--</div>
+                <div class="unit">%</div>
+            </div>
+            <div class="diagnosis" id="diag-hum">--</div>
+            <div class="trend" id="trend-hum"></div>
+        </div>
+
+        <div class="card" id="card-press">
+            <div class="card-header">
+                <span class="card-label">Pressão</span>
+                <i class="card-icon fa-solid fa-gauge"></i>
+            </div>
+            <div class="card-body">
+                <div class="value" id="press">--</div>
+                <div class="unit">hPa</div>
+            </div>
+            <div class="diagnosis">Alt: <span id="altitude">--</span>m</div>
+        </div>
+
+        <div class="card" id="card-co2">
+            <div class="card-header">
+                <span class="card-label">CO₂ Estimado</span>
+                <i class="card-icon fa-solid fa-lungs"></i>
+            </div>
+            <div class="card-body">
+                <div class="value" id="co2">--</div>
+                <div class="unit">ppm</div>
+            </div>
+            <div class="trend" id="trend-co2"></div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- SUAS CREDENCIAIS ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCv3U7hg4Uxq6fh2ucBn0OOvAVqeRwNqTY",
+            authDomain: "emai-iot.firebaseapp.com",
+            databaseURL: "https://emai-iot-default-rtdb.firebaseio.com",
+            projectId: "emai-iot",
+            storageBucket: "emai-iot.firebasestorage.app",
+            messagingSenderId: "101412618580",
+            appId: "1:101412618580:web:0498e07eaddfddd35888c1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const emaiRef = ref(db, 'emai');
+
+        // Variáveis para guardar histórico recente (para setinhas de tendência)
+        let prevValues = { temp: null, hum: null, iaq: null, co2: null };
+        let lastUpdateTimestamp = 0;
+
+        // --- SISTEMA DE TENDÊNCIA (Setinhas) ---
+        function updateTrend(elementId, currentValue, prevValue, inverse = false) {
+            const el = document.getElementById(elementId);
+            if (prevValue === null || currentValue === prevValue) {
+                el.style.opacity = '0'; // Esconde se não mudou ou é primeira vez
+                return;
+            }
+
+            el.style.opacity = '1';
+            const diff = currentValue - prevValue;
+            const isUp = diff > 0;
+            
+            // Lógica: Subir é ruim? (Ex: Temp, CO2, IAQ). Se sim, seta pra cima é Warning.
+            // Se inverse=true (não estamos usando aqui, mas seria pra algo onde subir é bom), inverte cor.
+            
+            if (isUp) {
+                el.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> +${diff.toFixed(1)}`;
+                el.className = 'trend up'; // Cor amarela/vermelha
+            } else {
+                el.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> ${diff.toFixed(1)}`;
+                el.className = 'trend down'; // Cor verde
+            }
+        }
+
+        // --- SISTEMA DE VISUALIZAÇÃO E CORES ---
+        function updateCardVisuals(type, value) {
+            const card = document.getElementById(`card-${type}`);
+            const diag = document.getElementById(`diag-${type}`);
+            
+            // Remove classes anteriores
+            card.classList.remove('status-good', 'status-warning', 'status-critical');
+            
+            let status = 'neutral';
+            let text = '';
+
+            if (type === 'temp') {
+                if (value < 18) { status = 'cold'; text = 'Frio'; }
+                else if (value <= 26) { status = 'good'; text = 'Confortável'; }
+                else if (value <= 30) { status = 'warning'; text = 'Quente'; }
+                else { status = 'critical'; text = 'Muito Quente'; }
+            }
+            
+            if (type === 'iaq') {
+                if (value <= 50) { status = 'good'; text = 'Excelente'; }
+                else if (value <= 100) { status = 'good'; text = 'Bom'; }
+                else if (value <= 150) { status = 'warning'; text = 'Moderado'; }
+                else if (value <= 200) { status = 'warning'; text = 'Ruim'; }
+                else { status = 'critical'; text = 'Péssimo'; }
+            }
+
+            if (type === 'co2') {
+                // CO2 não tem diagnóstico escrito no card pequeno, só cor
+                if (value < 800) status = 'good';
+                else if (value < 1200) status = 'warning';
+                else status = 'critical';
+            }
+
+            if (type === 'hum') {
+                if (value < 40) { status = 'warning'; text = 'Seco'; }
+                else if (value <= 70) { status = 'good'; text = 'Ideal'; }
+                else { status = 'warning'; text = 'Úmido'; }
+            }
+
+            // Aplica classes
+            if (status !== 'neutral' && status !== 'cold') card.classList.add(`status-${status}`);
+            if (diag) {
+                diag.innerText = text;
+                diag.className = `diagnosis text-${status}`;
+            }
+        }
+
+        // --- RECOMENDAÇÕES INTELIGENTES ---
+        function generateAdvice(data) {
+            const titleEl = document.getElementById('advice-title');
+            const descEl = document.getElementById('advice-desc');
+            const iconEl = document.getElementById('advice-icon');
+
+            // Lógica de Prioridade: O que é mais grave?
+            
+            // 1. Perigo IAQ
+            if (data.iaq > 150) {
+                titleEl.innerText = "Qualidade do Ar Crítica";
+                descEl.innerText = "Abra janelas imediatamente e ventile o local.";
+                iconEl.className = "advice-icon fa-solid fa-triangle-exclamation text-critical";
+                return;
+            }
+
+            // 2. Perigo CO2
+            if (data.co2 > 1200) {
+                titleEl.innerText = "Níveis Altos de CO₂";
+                descEl.innerText = "O ar está viciado. Recomendada pausa ou ventilação.";
+                iconEl.className = "advice-icon fa-solid fa-lungs-virus text-warning";
+                return;
+            }
+
+            // 3. Desconforto Térmico
+            if (data.temperatura > 28) {
+                titleEl.innerText = "Ambiente Quente";
+                descEl.innerText = "Ligue o ar condicionado ou ventilador.";
+                iconEl.className = "advice-icon fa-solid fa-temperature-arrow-up text-warning";
+                return;
+            }
+
+            // 4. Tudo ok
+            titleEl.innerText = "Ambiente Saudável";
+            descEl.innerText = "As condições estão ideais para produtividade.";
+            iconEl.className = "advice-icon fa-solid fa-circle-check text-good";
+        }
+
+        // --- CÁLCULO DE ALTITUDE ---
+        function calcAltitude(pressao) {
+            if (!pressao) return "--";
+            const P0 = 1013.25;
+            return (44330 * (1 - Math.pow((pressao / P0), (1 / 5.255)))).toFixed(0);
+        }
+
+        // --- VERIFICAÇÃO DE CONEXÃO (Watchdog) ---
+        setInterval(() => {
+            const now = Date.now();
+            const dot = document.getElementById('conn-dot');
+            const text = document.getElementById('conn-text');
+            
+            // Se última atualização foi há mais de 20s
+            if (now - lastUpdateTimestamp > 20000 && lastUpdateTimestamp !== 0) {
+                dot.style.backgroundColor = 'var(--critical)';
+                dot.classList.remove('pulse');
+                text.innerText = "Offline";
+                text.style.color = 'var(--text-secondary)';
+            }
+        }, 5000);
+
+        // --- ESCUTA DO FIREBASE ---
+        onValue(emaiRef, (snapshot) => {
+            const data = snapshot.val();
+
+            if (data) {
+                lastUpdateTimestamp = Date.now();
+                
+                // Atualiza Status de Conexão
+                const dot = document.getElementById('conn-dot');
+                const text = document.getElementById('conn-text');
+                dot.style.backgroundColor = 'var(--good)';
+                dot.classList.add('pulse');
+                text.innerText = "Online";
+                text.style.color = 'var(--good)';
+
+                // Atualiza Valores e Visuais
+                if (data.temperatura) {
+                    document.getElementById('temp').innerText = data.temperatura.toFixed(1);
+                    updateCardVisuals('temp', data.temperatura);
+                    updateTrend('trend-temp', data.temperatura, prevValues.temp);
+                    prevValues.temp = data.temperatura;
+                }
+
+                if (data.umidade) {
+                    document.getElementById('hum').innerText = data.umidade.toFixed(1);
+                    updateCardVisuals('hum', data.umidade);
+                    updateTrend('trend-hum', data.umidade, prevValues.hum);
+                    prevValues.hum = data.umidade;
+                }
+
+                if (data.pressao) {
+                    document.getElementById('press').innerText = data.pressao.toFixed(0);
+                    document.getElementById('altitude').innerText = calcAltitude(data.pressao);
+                }
+
+                if (data.iaq) {
+                    document.getElementById('iaq').innerText = data.iaq;
+                    updateCardVisuals('iaq', data.iaq);
+                    updateTrend('trend-iaq', data.iaq, prevValues.iaq);
+                    prevValues.iaq = data.iaq;
+                }
+
+                if (data.co2) {
+                    document.getElementById('co2').innerText = data.co2;
+                    updateCardVisuals('co2', data.co2);
+                    updateTrend('trend-co2', data.co2, prevValues.co2);
+                    prevValues.co2 = data.co2;
+                }
+
+                // Gera recomendação
+                generateAdvice(data);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -5,7 +5,7 @@
 O **EMAI** é uma solução de IoT desenvolvida para monitorar a qualidade do ar e condições ambientais em tempo real. O sistema coleta dados via sensores, processa as informações usando a biblioteca BSEC (Bosch) e disponibiliza os resultados em um Dashboard Web responsivo e acessível globalmente.
 
 <p align="center">
-  <img src="docs/screenshot_dashboard.png" alt="Dashboard EMAI" width="600">
+  <img width="1215" height="754" alt="image" src="https://github.com/user-attachments/assets/71d17e78-051d-4038-a1a9-c1abfab9dbbb" />
 </p>
 
 ## 🎯 Funcionalidades
